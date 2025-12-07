@@ -29,18 +29,21 @@
 *   **复习时机处理 (`delta_t`)**：能够根据用户是提前、准时还是延迟复习，来动态调整下一次的稳定性增益。
 *   **间隔模糊化 (Fuzzing)**：为计算出的复习间隔增加随机扰动。
 
-**要查看完整的源代码，请直接参考以下文件：**
+### 2. 核心 API 概览
+引擎主要导出 `getNextStates` 和 `applyFuzzAndLoadBalance` 等函数。前端通过调用 `getNextStates` 获取卡片在不同评分下的新状态，然后结合 `applyFuzzAndLoadBalance` 的结果来确定最终的复习计划。
+
+**要查看完整的源代码和导出的类型，请直接参考以下文件：**
 *   **数据类型**: `srs-engine/src/types.ts`
 *   **算法实现**: `srs-engine/src/index.ts`
 
-### 2. 未来改进与考量
+### 3. 未来改进与考量
 
-#### 2.1 负载均衡 (Load Balancer)
+#### 3.1 负载均衡 (Load Balancer)
 *   **架构定位**: “负载均衡”是一个**更高层次的调度编排功能**，而非 FSRS 核心算法的一部分。
 *   **当前状态**: `srs-engine` 中的 `applyFuzzAndLoadBalance` 函数目前仅实现了 Fuzzing（随机扰动）功能。
 *   **实现建议**: 负载均衡应作为**前端应用层**的一部分来实现。该服务负责查询本地数据库，预测未来几天的复习负载，然后在 Fuzz 范围内，加权选择最“空闲”的一天作为最终的 `due` 日期。
 
-#### 2.2 复习时机处理 (`delta_t`) 精度
+#### 3.2 复习时机处理 (`delta_t`) 精度
 *   **当前状态**: `srs-engine` 的实现**已经能够**根据复习的提前或延迟来动态调整稳定度的增益，并通过了单元测试。
 *   **未来展望**: 当前的实现是基于对 `ts-fsrs` 库的精确适配。FSRS 算法本身仍在不断发展，未来若有更优化的 `delta_t` 处理公式，我们可以再次迭代 `srs-engine`。这是一个未来可以投入的优化点，而非当前缺陷。
 
@@ -48,7 +51,6 @@
 ## 第二部分：数据流与边界条件
 
 ### “最简生词”的处理流程
-
 **场景**: 用户通过查词典、划词等方式，只录入了一个单词 "work" 及其最简单的释义 "工作"。
 
 **数据流**:
@@ -73,6 +75,7 @@
 
 ---
 ## 第四部分：后端 API 设计 (v5)
+
 *本节是对 API 的最终详细设计，它解决了数据同步中的所有关键缺口。*
 
 ### 1. 核心原则
@@ -91,18 +94,34 @@
 
 ---
 ## 第五部分：后端数据模型 (详细阐述)
-*本数据模型的设计思想完全借鉴自 Anki 成熟的数据库结构。*
 
-*   **`users`**: `id`, `username`, `password_hash`, `created_at`
-*   **`decks`**: `id`, `user_id`, `name`, `config_json`, `created_at`, `modified_at`
-*   **`notes`**: `id`, `user_id`, `fields_json`, `created_at`, `modified_at`
-*   **`cards`**: `id`, `user_id`, `note_id`, `deck_id`, `due`, `stability`, `difficulty`, `lapses`, `state`, `created_at`, `modified_at`
-*   **`revlog`** (复习日志): `id`, `user_id`, `card_id`, `review_time`, `rating`, `state_before`, `state_after`, `stability_before`, `stability_after`, ...
+本数据模型的设计思想完全借鉴自 Anki 成熟的数据库结构，并为我们的云服务做了适配和优化。
+
+### `users` 表
+*   **用途**: 存储用户信息，用于登录和认证。
+*   **字段**: `id` (PK), `username`, `password_hash`, `created_at`
+
+### `decks` 表 (卡组)
+*   **用途**: 存储用户创建的卡组。
+*   **字段**: `id` (PK), `user_id` (FK), `name`, `config_json` (用于存储学习步长等配置), `created_at`, `modified_at`
+
+### `notes` 表 (笔记)
+*   **用途**: 存储知识的“原子”单位。
+*   **字段**: `id` (PK), `user_id` (FK), `fields_json` (灵活存储所有字段内容), `created_at`, `modified_at`
+
+### `cards` 表 (卡片)
+*   **用途**: 存储可被复习的“卡片”单位，是 `srs-engine` 的直接操作对象。
+*   **字段**: `id` (PK), `user_id` (FK), `note_id` (FK), `deck_id` (FK), `due`, `stability`, `difficulty`, `lapses`, `state`, `created_at`, `modified_at`
+
+### `revlog` 表 (复习日志)
+*   **用途**: **只增不删**的流水日志表，记录用户的每一次复习操作，对调试和未来优化至关重要。
+*   **字段**: `id` (PK), `user_id`, `card_id`, `review_time`, `rating`, `state_before`, `state_after`, `stability_before`, `stability_after`, ...
 
 ---
 ## 第六部分：笔记与卡片模板策略
+
 ### 我们的决策：MVP 优先，兼容未来
-*   **当前版本**: **不**在数据库中创建 `note_types` 和 `card_templates` 表。生成卡片的规则**硬编码**在前端。
+*   **当前版本**: **不**在数据库中创建 `note_types` 和 `card_templates` 表。生成卡片的规则**硬编码**在前端，可提供几种固定的笔记模式（如“单词-释义”、“问答”）。
 *   **未来扩展**: 当前的 `notes` 表 `fields_json` 字段为未来平滑过渡到完全可定制的模板系统做好了准备。
 
 ---
@@ -115,32 +134,25 @@
 ### 2. 复习界面代码示例 (`ReviewScreen.jsx`)
 *此为核心逻辑示例，旨在展示 `srs-engine` 如何与前端数据库和状态管理结合。*
 ```jsx
-import { getNextStates, applyFuzzAndLoadBalance } from '../srs-engine'; // 导入我们创建的引擎
+// 伪代码示例
+import { getNextStates, applyFuzzAndLoadBalance } from '../srs-engine';
 import { db } from './database';
-import { State, Rating } from '../srs-engine';
 
-// ...
 async function handleAnswer(card, rating, deckConfig, now) {
     // 1. 从 SRS 引擎获取所有可能的新状态
     const nextStates = getNextStates(card, deckConfig, now);
-
     // 2. 根据用户评分选择一个状态
     const chosenState = nextStates[rating];
-
     // 3. 计算最终间隔 (应用 Fuzz)
     const finalInterval = applyFuzzAndLoadBalance(chosenState.interval);
-    
-    // 4. 准备更新本地数据库
+    // 4. 准备更新本地数据库的对象
     const updatedCard = { /* ... 更新卡片属性 ... */ };
-    const reviewLog = { /* ... 记录所有前后变化，用于上传 ... */ };
-
+    const reviewLog = { /* ... 记录所有前后变化 ... */ };
     // 5. 原子化地更新本地数据库
     await db.transaction('rw', db.cards, db.reviews, async () => {
         await db.cards.put(updatedCard);
         await db.reviews.add(reviewLog);
     });
-
     // 6. UI 切换到下一张卡
-    // ...
-};
+}
 ```
