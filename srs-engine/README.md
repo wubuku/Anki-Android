@@ -9,11 +9,9 @@ This module is the result of an iterative and collaborative development process:
 1.  **Exploration**: We began by analyzing the `Anki-Android` codebase to understand its core architecture.
 2.  **Architectural Pivot**: We pivoted from a server-centric design to a **"Local-First"** architecture, which is more robust, cost-effective, and provides a superior offline user experience.
 3.  **Deep Dive & Adaptation**: We investigated Anki's core Rust library (`rslib`) and the `ts-fsrs` TypeScript port to understand and adapt the precise FSRS formulas.
+4.  **TDD Implementation**: This module was built from the ground up using **Test-Driven Development (TDD)**, resulting in a reliable, standalone, and thoroughly tested SRS engine.
+
 The result is a reliable, standalone, and thoroughly tested SRS engine that can be confidently integrated into any PWA or JavaScript/TypeScript project.
-
-### Final Recommendation
-
-While this module is a complete and functional implementation, for a production application, it is **strongly recommended to use the official `ts-fsrs` npm package directly**. This `srs-engine` project was an invaluable tool for research, deep understanding, and validation, but relying on the official package ensures you receive ongoing bug fixes, performance improvements, and algorithm updates from the community. Our engine can serve as a lightweight adapter or wrapper if needed.
 
 ## Features
 
@@ -61,3 +59,9 @@ This function takes a calculated interval (in days) and applies a random fuzz fa
 For the full, detailed source code, please refer to the files in the `src/` directory:
 - **Data Structures**: `srs-engine/src/types.ts`
 - **Core Algorithm**: `srs-engine/src/index.ts`
+
+---
+
+## Final Recommendation
+
+While this module is a complete and functional implementation, for a production application, it is **strongly recommended to use the official `ts-fsrs` npm package directly**. This `srs-engine` project was an invaluable tool for research, deep understanding, and validation, but relying on the official package ensures you receive ongoing bug fixes, performance improvements, and algorithm updates from the community. Our engine can serve as a lightweight adapter or wrapper if needed.

@@ -1,5 +1,7 @@
-import { getNextStates, FSRS_DEFAULT_PARAMS_FULL, applyFuzzAndLoadBalance, DAY_IN_MS, date_diff } from '../src/index';
-import { Card, State, Rating, DeckConfig } from '../src/types';
+/// <reference types="jest" />
+import { describe, expect, it } from '@jest/globals';
+import { DAY_IN_MS, FSRS_DEFAULT_PARAMS_FULL, applyFuzzAndLoadBalance, getNextStates } from '../src/index';
+import { Card, DeckConfig, Rating, State } from '../src/types';
 
 const defaultConfig: DeckConfig = {
     learningSteps: [60, 600], // 1m, 10m in seconds
