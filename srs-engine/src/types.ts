@@ -20,12 +20,19 @@ export interface Card {
   lapses: number;
   state: State;
   last_review?: Date;
+  step: number; // Index of the current learning step
+}
+
+export interface DeckConfig {
+  learningSteps: number[]; // in seconds, e.g., [60, 600] for 1m, 10m
+  relearningSteps: number[]; // in seconds
+  fsrsParams: FSRSParameters;
 }
 
 export interface FSRSParameters {
   request_retention: number;
   maximum_interval: number;
-  w: number[];
+  w: Readonly<number[]>; // Changed to Readonly<number[]>
 }
 
 export interface MemoryState {

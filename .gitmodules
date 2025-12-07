@@ -1,0 +1,3 @@
+[submodule "srs-engine/ts-fsrs"]
+	path = srs-engine/ts-fsrs
+	url = https://github.com/open-spaced-repetition/ts-fsrs.git
