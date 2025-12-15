@@ -42,6 +42,14 @@ npm test
 
 You should see all tests passing, confirming that the engine is working as expected.
 
+### Latest Test Developments
+
+We've recently added comprehensive integration tests (`ts-fsrs-integration.test.ts`) to validate the official `ts-fsrs` npm package as our recommended production solution. These tests confirm:
+
+- **Functional Compatibility**: Our custom implementation produces nearly identical scheduling results to the official `ts-fsrs` package
+- **Feature Parity**: The official package supports all required FSRS functionality including custom parameters, time-based adjustments, and advanced scheduling
+- **Production Readiness**: Validated for direct production use with robust error handling and performance characteristics
+
 ## Core API & Usage
 
 The engine exports several functions, with `getNextStates` being the primary entry point.
